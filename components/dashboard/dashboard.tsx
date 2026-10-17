@@ -97,14 +97,14 @@ export function Dashboard() {
       {/* Main */}
       <main className="flex-1 px-6 py-8 md:px-10">
         <div className="mx-auto max-w-5xl">
-          <header className="flex items-center justify-between">
+          <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold">Workflows</h1>
               <p className="mt-1 text-sm text-gray-500">
                 Create and manage your AI workflows.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 ref={fileRef}
                 type="file"

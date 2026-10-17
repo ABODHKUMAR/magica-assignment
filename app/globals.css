@@ -20,6 +20,31 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ---------------------------------------------------------------------------
+   Accessibility — visible keyboard focus ring (task.md Open Q #9)
+   Applies a consistent brand ring for keyboard users only (:focus-visible),
+   so mouse clicks stay clean while tab-navigation is clearly indicated.
+--------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--brand, #6d5efc);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+/* Elements that opt out of the default outline must still show a focus ring. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #6d5efc;
+  outline-offset: 2px;
+}
+
+:root {
+  --brand: #6d5efc;
+}
+
 /* React Flow overrides to match the Galaxy.ai reference */
 .react-flow__attribution {
   display: none;
@@ -27,6 +52,24 @@ body {
 
 .react-flow__node {
   font-size: 12px;
+}
+
+/* Rounded, subtle controls + minimap to match the reference chrome */
+.react-flow__controls {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.1);
+  border: 1px solid #e5e7eb;
+}
+.react-flow__controls-button {
+  border-bottom: 1px solid #f1f1f3;
+  background: #fff;
+}
+.react-flow__minimap {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.1);
+  border: 1px solid #e5e7eb;
 }
 
 /* Animated dashed edges */
@@ -42,5 +85,20 @@ body {
 @keyframes py-dash {
   to {
     stroke-dashoffset: -12;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion — honor the user's OS preference (accessibility).
+   Decorative motion (edge dashes, pulsing glow) is stilled; the running-node
+   state degrades to a steady brand ring so feedback is preserved.
+--------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .py-edge-animated .react-flow__edge-path {
+    animation: none;
+  }
+  .animate-pulse-glow {
+    animation: none !important;
+    box-shadow: 0 0 0 3px rgba(109, 94, 252, 0.45) !important;
   }
 }

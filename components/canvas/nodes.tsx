@@ -70,6 +70,7 @@ function ImageFieldInput({
           onClick={() => fileRef.current?.click()}
           disabled={uploading}
           title="Upload image to Transloadit"
+          aria-label="Upload image"
           className="flex items-center gap-0.5 rounded-md border border-gray-200 px-2 py-1 text-[11px] text-gray-500 hover:border-brand hover:text-brand disabled:opacity-50"
         >
           {uploading ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
@@ -119,11 +120,13 @@ function RequestInputsNode({ id, data }: NodeProps<RFNode>) {
               onChange={(e) =>
                 setFields(fields.map((x) => (x.id === f.id ? { ...x, name: e.target.value } : x)))
               }
+              aria-label="Field name"
               className="w-32 bg-transparent text-[11px] font-semibold text-gray-700 focus:outline-none"
             />
             <button
               onClick={() => setFields(fields.filter((x) => x.id !== f.id))}
-              className="text-[10px] text-gray-400 hover:text-red-500"
+              className="rounded text-[10px] text-gray-400 hover:text-red-500"
+              aria-label={`Remove field ${f.name}`}
             >
               remove
             </button>
@@ -225,6 +228,8 @@ function CropImageNode({ id, data }: NodeProps<RFNode>) {
                 value={crop[key]}
                 disabled={connected}
                 onChange={(e) => setCrop({ [key]: Number(e.target.value) })}
+                aria-label={label}
+                aria-valuetext={`${crop[key]} percent`}
                 className="flex-1 accent-brand disabled:opacity-40"
               />
               <span className="w-8 text-right text-[11px] text-gray-500">{crop[key]}</span>
@@ -277,6 +282,7 @@ function GeminiNode({ id, data }: NodeProps<RFNode>) {
         <select
           value={g.model}
           onChange={(e) => setG({ model: e.target.value })}
+          aria-label="Gemini model"
           className="max-w-[92px] rounded border border-gray-200 bg-white px-1 py-0.5 text-[10px] text-gray-600 focus:outline-none"
         >
           {GEMINI_MODELS.map((m) => (
@@ -321,8 +327,11 @@ function GeminiNode({ id, data }: NodeProps<RFNode>) {
       </button>
       {showSettings && (
         <div className="rounded-lg border border-gray-100 p-2">
-          <label className="text-[10px] text-gray-500">Temperature: {g.settings?.temperature ?? 0.7}</label>
+          <label className="text-[10px] text-gray-500" htmlFor={`temp-${id}`}>
+            Temperature: {g.settings?.temperature ?? 0.7}
+          </label>
           <input
+            id={`temp-${id}`}
             type="range"
             min={0}
             max={1}
@@ -331,6 +340,7 @@ function GeminiNode({ id, data }: NodeProps<RFNode>) {
             onChange={(e) =>
               setG({ settings: { ...g.settings, temperature: Number(e.target.value) } })
             }
+            aria-label="Temperature"
             className="w-full accent-brand"
           />
         </div>

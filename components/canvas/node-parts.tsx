@@ -57,6 +57,7 @@ export function NodeShell({
           disabled={isRunning}
           className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
           title="Run this node"
+          aria-label={`Run ${title} node`}
         >
           <Play size={11} /> Run
         </button>
@@ -65,6 +66,7 @@ export function NodeShell({
             onClick={() => duplicateNode(id)}
             className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
             title="Duplicate"
+            aria-label={`Duplicate ${title} node`}
           >
             <Copy size={13} />
           </button>
@@ -74,6 +76,7 @@ export function NodeShell({
             onClick={() => deleteNode(id)}
             className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
             title="Delete"
+            aria-label={`Delete ${title} node`}
           >
             <Trash2 size={13} />
           </button>

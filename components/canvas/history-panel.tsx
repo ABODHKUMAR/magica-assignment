@@ -29,12 +29,19 @@ export function HistoryPanel({
   onClose: () => void;
 }) {
   return (
-    <aside className="flex h-full w-80 shrink-0 flex-col border-l border-gray-200 bg-white">
+    <aside
+      aria-label="Workflow history"
+      className="absolute inset-y-0 right-0 z-30 flex h-full w-full max-w-sm shrink-0 flex-col border-l border-gray-200 bg-white shadow-xl md:static md:z-auto md:w-80 md:shadow-none"
+    >
       <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Clock size={15} /> Workflow History
         </h2>
-        <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-700">
+        <button
+          onClick={onClose}
+          className="rounded text-xs text-gray-400 hover:text-gray-700"
+          aria-label="Close history panel"
+        >
           Close
         </button>
       </div>
@@ -65,7 +72,9 @@ function RunRow({ run, index }: { run: RunRecord; index: number }) {
     <li className="rounded-lg border border-gray-200">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left"
+        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left"
+        aria-expanded={open}
+        aria-label={`Run ${index}, ${run.status}, ${run.scope}. Toggle details`}
       >
         {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         <span className="flex-1">

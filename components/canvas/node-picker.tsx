@@ -1,7 +1,7 @@
 "use client";
 
 import { Crop, Image as ImageIcon, Search, Sparkles, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { NodeType } from "@/lib/types";
 
 interface PickerItem {
@@ -44,6 +44,15 @@ export function NodePicker({
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<(typeof CATEGORIES)[number]>("Recent");
 
+  // Close on Escape for keyboard users.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const results = useMemo(() => {
     let items = ITEMS;
     if (query.trim()) {
@@ -60,7 +69,11 @@ export function NodePicker({
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      <div className="absolute bottom-16 left-1/2 z-50 w-[420px] -translate-x-1/2 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
+      <div
+        role="dialog"
+        aria-label="Add a node"
+        className="absolute bottom-16 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-[420px] -translate-x-1/2 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl"
+      >
         <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2">
           <Search size={15} className="text-gray-400" />
           <input
@@ -68,9 +81,14 @@ export function NodePicker({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search nodes…"
+            aria-label="Search nodes"
             className="flex-1 text-sm focus:outline-none"
           />
-          <button onClick={onClose} className="rounded p-1 text-gray-400 hover:bg-gray-100">
+          <button
+            onClick={onClose}
+            className="rounded p-1 text-gray-400 hover:bg-gray-100"
+            aria-label="Close node picker"
+          >
             <X size={15} />
           </button>
         </div>

@@ -36,3 +36,10 @@ yarn-error.log*
 
 # trigger.dev
 /.trigger
+
+# local tooling / review artifacts
+*-dev.log
+/images/_review/
+/test-results/
+/playwright-report/
+/.playwright-mcp/

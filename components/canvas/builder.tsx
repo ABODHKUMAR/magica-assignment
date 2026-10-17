@@ -235,10 +235,12 @@ function BuilderInner({ workflow }: { workflow: WorkflowRecord }) {
     >
       <div className="flex h-screen flex-col bg-canvasbg">
         {/* Top bar */}
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3 sm:gap-3 sm:px-4">
           <button
             onClick={() => router.push("/dashboard")}
             className="rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-50"
+            aria-label="Back to dashboard"
+            title="Back to dashboard"
           >
             <ArrowLeft size={16} />
           </button>
@@ -246,7 +248,8 @@ function BuilderInner({ workflow }: { workflow: WorkflowRecord }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onBlur={() => void api.updateWorkflow(workflow.id, { name }).catch(() => {})}
-            className="rounded-lg px-2 py-1 text-sm font-semibold hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+            aria-label="Workflow name"
+            className="min-w-0 flex-1 rounded-lg px-2 py-1 text-sm font-semibold hover:bg-gray-50 focus:bg-gray-50 sm:flex-none"
           />
 
           <div className="ml-auto flex items-center gap-3 text-xs text-gray-500">
@@ -256,10 +259,20 @@ function BuilderInner({ workflow }: { workflow: WorkflowRecord }) {
             <span className="hidden items-center gap-1 rounded-md bg-gray-50 px-2 py-1 sm:flex">
               <Wallet size={12} /> Bal <strong className="text-gray-700">5085.54</strong> M
             </span>
-            <button onClick={undo} className="rounded-md p-1.5 hover:bg-gray-100" title="Undo">
+            <button
+              onClick={undo}
+              className="hidden rounded-md p-1.5 hover:bg-gray-100 sm:inline-flex"
+              title="Undo"
+              aria-label="Undo"
+            >
               <Undo2 size={15} />
             </button>
-            <button onClick={redo} className="rounded-md p-1.5 hover:bg-gray-100" title="Redo">
+            <button
+              onClick={redo}
+              className="hidden rounded-md p-1.5 hover:bg-gray-100 sm:inline-flex"
+              title="Redo"
+              aria-label="Redo"
+            >
               <Redo2 size={15} />
             </button>
             {selectedIds.length > 0 && (
@@ -274,12 +287,15 @@ function BuilderInner({ workflow }: { workflow: WorkflowRecord }) {
             <button
               onClick={() => void runGraph("full", [])}
               disabled={isRunning}
+              aria-label={isRunning ? "Running workflow" : "Run workflow"}
               className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60"
             >
               <Play size={14} /> {isRunning ? "Running…" : "Run"}
             </button>
             <button
               onClick={() => setHistoryOpen((v) => !v)}
+              aria-label="Toggle workflow history"
+              aria-pressed={historyOpen}
               className={`rounded-lg border p-1.5 ${
                 historyOpen ? "border-brand text-brand" : "border-gray-200 text-gray-500"
               } hover:bg-gray-50`}
@@ -309,7 +325,8 @@ function BuilderInner({ workflow }: { workflow: WorkflowRecord }) {
             >
               <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} color="#d7d7db" />
               <Controls showInteractive={false} />
-              <MiniMap pannable zoomable className="!bottom-4 !right-4" />
+              {/* MiniMap is noise on small screens — hide below md. */}
+              <MiniMap pannable zoomable className="!bottom-4 !right-4 !hidden md:!block" />
             </ReactFlow>
 
             {/* Bottom-center floating toolbar */}
@@ -318,6 +335,7 @@ function BuilderInner({ workflow }: { workflow: WorkflowRecord }) {
                 onClick={exportJson}
                 className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
                 title="Export JSON"
+                aria-label="Export workflow as JSON"
               >
                 <Download size={16} />
               </button>
@@ -326,6 +344,9 @@ function BuilderInner({ workflow }: { workflow: WorkflowRecord }) {
                 onClick={() => setPickerOpen((v) => !v)}
                 className="rounded-lg bg-brand p-2 text-white hover:bg-brand-600"
                 title="Add node"
+                aria-label="Add node"
+                aria-haspopup="dialog"
+                aria-expanded={pickerOpen}
               >
                 <Plus size={16} />
               </button>
@@ -334,7 +355,11 @@ function BuilderInner({ workflow }: { workflow: WorkflowRecord }) {
             {pickerOpen && <NodePicker onPick={addNode} onClose={() => setPickerOpen(false)} />}
 
             {toast && (
-              <div className="absolute left-1/2 top-4 z-40 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg">
+              <div
+                role="status"
+                aria-live="polite"
+                className="absolute left-1/2 top-4 z-40 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg"
+              >
                 {toast}
               </div>
             )}
