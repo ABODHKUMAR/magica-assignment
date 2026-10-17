@@ -1,0 +1,58 @@
+// Prisma schema for Py — Workflow Builder
+// See task.md Section G (Data & API Requirements).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Workflow {
+  id        String        @id @default(cuid())
+  userId    String // Clerk user id (ownership scope)
+  name      String        @default("Untitled Workflow")
+  // Serialized React Flow graph: { nodes, edges } + per-node field config
+  graph     Json
+  status    String        @default("idle") // idle | running
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  runs      WorkflowRun[]
+
+  @@index([userId])
+}
+
+model WorkflowRun {
+  id         String    @id @default(cuid())
+  workflowId String
+  workflow   Workflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  scope      String // full | partial | single
+  status     String    @default("running") // running | success | failed | partial
+  durationMs Int       @default(0)
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+  nodeRuns   NodeRun[]
+
+  @@index([workflowId])
+}
+
+model NodeRun {
+  id         String      @id @default(cuid())
+  runId      String
+  run        WorkflowRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  nodeId     String
+  nodeType   String
+  label      String      @default("")
+  status     String      @default("pending") // pending | running | success | failed | skipped
+  inputs     Json?
+  output     Json?
+  durationMs Int         @default(0)
+  error      String?
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  @@index([runId])
+}
