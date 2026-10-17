@@ -6,7 +6,7 @@
 import { directUpstream } from "../dag";
 import { getInputPorts, getOutputPorts } from "../nodes";
 import type { GraphNode, NodeExecStatus, RunScope, WorkflowGraph } from "../types";
-import { runCropImage, runGemini } from "./tasks";
+import { dispatchCrop, dispatchGemini } from "./dispatch";
 
 export interface NodeRunResult {
   nodeId: string;
@@ -238,7 +238,7 @@ async function executeNode(
       return inputs["result"]; // collected list
     case "crop-image": {
       const image = String(inputs["inputImage"] ?? node.data.crop?.inputImage ?? "");
-      return runCropImage(
+      return dispatchCrop(
         {
           inputImage: image,
           x: num(inputs["x"], node.data.crop?.x ?? 0),
@@ -246,7 +246,7 @@ async function executeNode(
           width: num(inputs["width"], node.data.crop?.width ?? 100),
           height: num(inputs["height"], node.data.crop?.height ?? 100),
         },
-        cropDelayMs !== undefined ? { delayMs: cropDelayMs } : undefined,
+        cropDelayMs,
       );
     }
     case "gemini": {
@@ -256,8 +256,8 @@ async function executeNode(
         : inputs["image"]
           ? [String(inputs["image"])]
           : [];
-      return runGemini({
-        model: g?.model ?? "gemini-3.8-flash",
+      return dispatchGemini({
+        model: g?.model ?? "gemini-3.8-pro-preview",
         prompt: String(inputs["prompt"] ?? g?.prompt ?? ""),
         systemPrompt: String(inputs["systemPrompt"] ?? g?.systemPrompt ?? ""),
         images,

@@ -11,7 +11,7 @@ import type {
   WorkflowNodeData,
 } from "./types";
 
-export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
+export const DEFAULT_GEMINI_MODEL = "gemini-3.8-pro-preview";
 
 /** Pre-placed, non-deletable singleton node types (task.md C.6). */
 export const SINGLETON_TYPES: NodeType[] = ["request-inputs", "response"];

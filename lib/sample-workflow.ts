@@ -76,7 +76,7 @@ export function buildSampleWorkflow(): WorkflowGraph {
         type: "crop-image",
         label: "Crop Image",
         status: "idle",
-        crop: { inputImage: "", x: 20, y: 20, width: 60, height: 60 },
+        crop: { inputImage: "", x: 50, y: 50, width: 70, height: 70 },
       },
     },
     {
@@ -88,7 +88,7 @@ export function buildSampleWorkflow(): WorkflowGraph {
         type: "crop-image",
         label: "Crop Image",
         status: "idle",
-        crop: { inputImage: "", x: 0, y: 0, width: 100, height: 50 },
+        crop: { inputImage: "", x: 50, y: 50, width: 100, height: 100 },
       },
     },
     {

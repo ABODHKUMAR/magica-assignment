@@ -18,7 +18,7 @@
     "@clerk/nextjs": "^5.7.5",
     "@google/generative-ai": "^0.21.0",
     "@prisma/client": "^5.22.0",
-    "@trigger.dev/sdk": "^3.3.1",
+    "@trigger.dev/sdk": "4.7.4",
     "@xyflow/react": "^12.3.5",
     "lucide-react": "^0.454.0",
     "nanoid": "^5.0.8",

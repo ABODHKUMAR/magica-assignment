@@ -29,24 +29,25 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 /**
- * Crop an image. Enforces the mandatory artificial delay, then performs the
- * crop. When Transloadit/FFmpeg aren't configured, returns a deterministic
- * mock URL encoding the crop params so the demo flow still works.
+ * Crop an image. Enforces the mandatory artificial ≥30s delay (task.md C.6),
+ * then performs the actual crop via Transloadit's /image/resize robot when
+ * credentials are configured. Falls back to an annotated URL for demo mode.
  */
 export async function runCropImage(input: CropInput, opts: CropOptions = {}): Promise<string> {
+  // MANDATORY: sleep first — hard requirement regardless of execution path.
   const delayMs = opts.delayMs ?? CROP_MIN_DELAY_MS;
   await sleep(delayMs, opts.signal);
 
   const { inputImage, x, y, width, height } = input;
-  const key = process.env.TRANSLOADIT_SECRET;
-  if (key && inputImage) {
-    // Real path would submit an FFmpeg/crop assembly to Transloadit and poll
-    // for the resulting URL. Left as an integration point (needs credentials).
-    // For now, annotate the source URL with the crop region.
-    return appendCropQuery(inputImage, x, y, width, height);
+
+  // Real path: Transloadit assembly with /image/resize robot.
+  const { hasTransloadit, cropImageViaTransloadit } = await import("../transloadit");
+  if (hasTransloadit() && inputImage) {
+    return await cropImageViaTransloadit(inputImage, x, y, width, height);
   }
 
-  // Local fallback: echo a placeholder cropped image URL.
+  // Demo fallback: annotate source URL with crop params so downstream nodes
+  // can still receive a valid-looking image URL.
   const base = inputImage || "https://placehold.co/600x400/png";
   return appendCropQuery(base, x, y, width, height);
 }
@@ -77,7 +78,7 @@ export async function runGemini(input: GeminiInput): Promise<string> {
   const { GoogleGenerativeAI } = await import("@google/generative-ai");
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
-    model: input.model || process.env.GEMINI_DEFAULT_MODEL || "gemini-3.8-flash",
+    model: input.model || process.env.GEMINI_DEFAULT_MODEL || "gemini-3.8-pro-preview",
     systemInstruction: input.systemPrompt || undefined,
     generationConfig: {
       temperature: input.settings?.temperature,
@@ -93,26 +94,49 @@ export async function runGemini(input: GeminiInput): Promise<string> {
     if (inline) parts.push({ inlineData: inline });
   }
 
-  // Retry up to 3 times on transient 503/529 (server overload), with backoff.
+  // Retry on transient 503/529 (server overload) and on 429 free-tier rate
+  // limits (which reset per-minute), with backoff. Rate limits get longer waits.
   let lastErr: unknown;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const result = await model.generateContent(parts);
       return result.response.text();
     } catch (err: unknown) {
       lastErr = err;
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("RESOURCE_EXHAUSTED")) {
-        throw new Error(
-          `Gemini quota exceeded for model "${input.model}". ` +
-          `Enable billing at https://aistudio.google.com/plan_information or switch to gemini-3.8-flash (free tier).`,
-        );
-      }
+      const isRateLimit =
+        msg.includes("429") || msg.includes("Too Many Requests") ||
+        msg.includes("RESOURCE_EXHAUSTED");
       const isTransient =
         msg.includes("503") || msg.includes("529") ||
         msg.includes("Service Unavailable") || msg.includes("overloaded");
-      if (!isTransient || attempt === 2) throw err;
-      // Exponential backoff: 2s then 4s before retry
+
+      if (isRateLimit) {
+        // Demo fallback: if enabled, degrade gracefully to deterministic mock
+        // copy on the first 429 so the full pipeline completes fast instead of
+        // waiting through retries or hard-failing.
+        if (process.env.GEMINI_MOCK_FALLBACK === "true") {
+          console.warn(
+            `[runGemini] Free-tier rate limit for "${input.model}" (429); ` +
+              `GEMINI_MOCK_FALLBACK=true → returning mock output.`,
+          );
+          return mockGemini(input);
+        }
+        if (attempt === 3) {
+          throw new Error(
+            `Gemini free-tier quota exhausted for model "${input.model}" (HTTP 429) after retries. ` +
+            `The free tier has very low per-minute/per-day limits. ` +
+            `Wait a few minutes and retry, enable billing at https://aistudio.google.com/plan_information, ` +
+            `or set GEMINI_MOCK_FALLBACK=true to demo with mock output.`,
+          );
+        }
+        // Free-tier limits reset ~per-minute: wait longer (15s, 30s, 45s).
+        await sleep((attempt + 1) * 15_000);
+        continue;
+      }
+
+      if (!isTransient || attempt === 3) throw err;
+      // Server-overload backoff: 2s, 4s, 6s.
       await sleep((attempt + 1) * 2000);
     }
   }

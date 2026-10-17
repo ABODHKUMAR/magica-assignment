@@ -1,8 +1,8 @@
 "use client";
 
 import type { NodeProps } from "@xyflow/react";
-import { Bot, Crop, FileInput, Plus, Settings2, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Bot, Crop, FileInput, Loader2, Plus, Settings2, Sparkles, Upload } from "lucide-react";
+import { useRef, useState } from "react";
 import { getInputPorts } from "@/lib/nodes";
 import { makeField } from "@/lib/nodes";
 import { useCanvasStore, type RFNode } from "@/lib/store";
@@ -18,6 +18,81 @@ import {
 // ---------------------------------------------------------------------------
 // Request Inputs
 // ---------------------------------------------------------------------------
+
+/** Upload a file to /api/upload and return the CDN URL. */
+async function uploadImage(file: File): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch("/api/upload", { method: "POST", body: form });
+  const json = (await res.json()) as { url?: string; error?: string };
+  if (!res.ok || !json.url) throw new Error(json.error ?? "Upload failed");
+  return json.url;
+}
+
+function ImageFieldInput({
+  field,
+  onChange,
+}: {
+  field: RequestInputField;
+  onChange: (value: string) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const url = await uploadImage(file);
+      onChange(url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      // Reset so same file can be re-selected
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex gap-1">
+        <input
+          value={field.value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Paste image URL or upload ↑"
+          className="min-w-0 flex-1 rounded-md border border-gray-200 px-2 py-1 text-[11px] focus:border-brand focus:outline-none"
+        />
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          title="Upload image to Transloadit"
+          className="flex items-center gap-0.5 rounded-md border border-gray-200 px-2 py-1 text-[11px] text-gray-500 hover:border-brand hover:text-brand disabled:opacity-50"
+        >
+          {uploading ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
+      {uploadError && (
+        <p className="mt-0.5 text-[10px] text-red-500">{uploadError}</p>
+      )}
+      {field.value && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={field.value} alt="" className="mt-1 h-16 w-full rounded object-cover" />
+      )}
+    </div>
+  );
+}
+
 function RequestInputsNode({ id, data }: NodeProps<RFNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
   const [adding, setAdding] = useState(false);
@@ -53,6 +128,7 @@ function RequestInputsNode({ id, data }: NodeProps<RFNode>) {
               remove
             </button>
           </div>
+
           {f.kind === "text_field" ? (
             <textarea
               value={f.value}
@@ -64,21 +140,14 @@ function RequestInputsNode({ id, data }: NodeProps<RFNode>) {
               className="w-full resize-none rounded-md border border-gray-200 px-2 py-1 text-[11px] focus:border-brand focus:outline-none"
             />
           ) : (
-            <div>
-              <input
-                value={f.value}
-                onChange={(e) =>
-                  setFields(fields.map((x) => (x.id === f.id ? { ...x, value: e.target.value } : x)))
-                }
-                placeholder="Image URL (upload integ. pending creds)"
-                className="w-full rounded-md border border-gray-200 px-2 py-1 text-[11px] focus:border-brand focus:outline-none"
-              />
-              {f.value && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={f.value} alt="" className="mt-1 h-16 w-full rounded object-cover" />
-              )}
-            </div>
+            <ImageFieldInput
+              field={f}
+              onChange={(value) =>
+                setFields(fields.map((x) => (x.id === f.id ? { ...x, value } : x)))
+              }
+            />
           )}
+
           {/* per-field output handle */}
           <OutputRow nodeId={id} portId={f.id} label="" type={f.kind === "image_field" ? "image" : "text"} />
         </div>
@@ -175,17 +244,15 @@ function CropImageNode({ id, data }: NodeProps<RFNode>) {
 // ---------------------------------------------------------------------------
 // Free-tier models first; billing-required models below the divider label.
 const GEMINI_MODELS = [
-  "gemini-3.8-flash",          // free tier — recommended (latest)
-  "gemini-2.5-flash",          // free tier
-  "gemini-1.5-flash",          // free tier
-  "gemini-1.5-pro",            // free tier (lower quota)
-  "gemini-2.5-pro",            // requires billing
-  "gemini-3.1-pro-preview",    // requires billing
+  "gemini-3.8-pro-preview",    // recommended (default)
+  "gemini-3.8-flash",          // flash (free tier, low quota)
+  "gemini-flash-latest",       // latest flash alias
+  "gemini-3.1-pro-preview",    // pro preview
 ];
 
 function GeminiNode({ id, data }: NodeProps<RFNode>) {
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
-  const g = data.gemini ?? { model: "gemini-3.8-flash", prompt: "", systemPrompt: "" };
+  const g = data.gemini ?? { model: "gemini-3.8-pro-preview", prompt: "", systemPrompt: "" };
   const [showSettings, setShowSettings] = useState(false);
   const promptConnected = useIsConnected(id, "prompt");
   const sysConnected = useIsConnected(id, "systemPrompt");
