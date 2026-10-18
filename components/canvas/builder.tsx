@@ -27,6 +27,7 @@ import { useCanvasStore } from "@/lib/store";
 import type { RunRecord, WorkflowRecord } from "@/lib/repo";
 import type { NodeExecStatus, NodeType, RunScope } from "@/lib/types";
 import { BuilderProvider } from "./builder-context";
+import { edgeTypes } from "./edges";
 import { HistoryPanel } from "./history-panel";
 import { NodePicker } from "./node-picker";
 import { nodeTypes } from "./nodes";
@@ -236,21 +237,24 @@ function BuilderInner({ workflow }: { workflow: WorkflowRecord }) {
       <div className="flex h-screen flex-col bg-canvasbg">
         {/* Top bar */}
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3 sm:gap-3 sm:px-4">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-50"
-            aria-label="Back to dashboard"
-            title="Back to dashboard"
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => void api.updateWorkflow(workflow.id, { name }).catch(() => {})}
-            aria-label="Workflow name"
-            className="min-w-0 flex-1 rounded-lg px-2 py-1 text-sm font-semibold hover:bg-gray-50 focus:bg-gray-50 sm:flex-none"
-          />
+          {/* Title pill: back-arrow + editable name in one rounded container (ref screenshot-13). */}
+          <div className="flex min-w-0 flex-1 items-center gap-1 rounded-lg border border-gray-200 bg-white px-1 py-0.5 shadow-sm sm:flex-none">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="rounded-md p-1 text-gray-500 hover:bg-gray-50"
+              aria-label="Back to dashboard"
+              title="Back to dashboard"
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={() => void api.updateWorkflow(workflow.id, { name }).catch(() => {})}
+              aria-label="Workflow name"
+              className="min-w-0 flex-1 rounded-md bg-transparent px-1.5 py-1 text-sm font-semibold hover:bg-gray-50 focus:bg-gray-50 sm:w-56 sm:flex-none"
+            />
+          </div>
 
           <div className="ml-auto flex items-center gap-3 text-xs text-gray-500">
             <span className="hidden items-center gap-1 rounded-md bg-gray-50 px-2 py-1 sm:flex">
@@ -313,6 +317,7 @@ function BuilderInner({ workflow }: { workflow: WorkflowRecord }) {
               nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}

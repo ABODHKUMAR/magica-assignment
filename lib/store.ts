@@ -52,8 +52,7 @@ function styledEdge(edge: Edge, nodes: RFNode[]): Edge {
   const color = edgeColorForType(port?.type ?? "any");
   return {
     ...edge,
-    type: "default",
-    className: "py-edge-animated",
+    type: "flow",
     style: { stroke: color, strokeWidth: 2 },
   };
 }
